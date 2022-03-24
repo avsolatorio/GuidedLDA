@@ -113,7 +113,7 @@ class GuidedLDA:
         if len(logger.handlers) == 1 and isinstance(logger.handlers[0], logging.NullHandler):
             logging.basicConfig(level=logging.INFO)
 
-    def fit(self, X, y=None, seed_topics={}, seed_confidence=0):
+    def fit(self, X, y=None, seed_topics={}, seed_confidence=0, clean_up=True):
         """Fit the model with X.
 
         Parameters
@@ -128,10 +128,10 @@ class GuidedLDA:
             Returns the instance itself.
         """
 
-        self._fit(X, seed_topics=seed_topics, seed_confidence=seed_confidence)
+        self._fit(X, seed_topics=seed_topics, seed_confidence=seed_confidence, clean_up=clean_up)
         return self
 
-    def fit_transform(self, X, y=None, seed_topics={}, seed_confidence=0):
+    def fit_transform(self, X, y=None, seed_topics={}, seed_confidence=0, clean_up=True):
         """Apply dimensionality reduction on X
 
         Parameters
@@ -150,7 +150,7 @@ class GuidedLDA:
             # in case user passes a (non-sparse) array of shape (n_features,)
             # turn it into an array of shape (1, n_features)
             X = np.atleast_2d(X)
-        self._fit(X, seed_topics=seed_topics, seed_confidence=seed_confidence)
+        self._fit(X, seed_topics=seed_topics, seed_confidence=seed_confidence, clean_up=clean_up)
         return self.doc_topic_
 
     def transform(self, X, max_iter=20, tol=1e-16):
@@ -226,7 +226,7 @@ class GuidedLDA:
         assert theta_doc.shape == (self.n_topics,)
         return theta_doc
 
-    def _fit(self, X, seed_topics, seed_confidence):
+    def _fit(self, X, seed_topics, seed_confidence, clean_up=True):
         """Fit the model to the data X
 
         Parameters
@@ -262,9 +262,11 @@ class GuidedLDA:
         self.doc_topic_ /= np.sum(self.doc_topic_, axis=1)[:, np.newaxis]
 
         # delete attributes no longer needed after fitting to save memory and reduce clutter
-        del self.WS
-        del self.DS
-        del self.ZS
+        if clean_up:
+            del self.WS
+            del self.DS
+            del self.ZS
+
         return self
 
     def _initialize(self, X, seed_topics, seed_confidence):
